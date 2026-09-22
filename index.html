@@ -46,9 +46,6 @@ header.mast{display:flex;justify-content:space-between;align-items:flex-start;ga
 h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:34px;line-height:1.1;margin:6px 0 6px;letter-spacing:-.01em}
 .sub{color:var(--ink-2);margin:4px 0 0;padding-left:1.2em;max-width:60ch}
 .sub li{margin:2px 0}
-.lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
-.lang button{border:0;background:transparent;color:var(--ink-2);padding:5px 11px;font-size:12.5px}
-.lang button.on{background:var(--ink);color:var(--bg)}
 .bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:14px}
 .who{display:flex;align-items:center;gap:10px;min-width:0}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
@@ -137,9 +134,6 @@ div.f{font-size:13px;font-weight:600;color:var(--ink-2);margin:12px 0 5px}
       <h1 id="title"></h1>
       <ul class="sub" id="subtitle"></ul>
     </div>
-    <div class="lang" role="group" aria-label="Language">
-      <button data-lang="en">EN</button><button data-lang="ko">한국어</button>
-    </div>
   </header>
 
   <div id="demoNote" class="demo" hidden></div>
@@ -208,53 +202,6 @@ const DECLINE_COMMENT ="안하영님이 이 면담 요청을 거절하여 자동
 
 /* ---------------- i18n ---------------- */
 const I18N = {
-  en: {
-    eyebrow: n => `면담 booking · October · ${n}`,
-    title: () => "면담 Booking",
-    subtitle: r => ["How to book: pick an open slot, then send the request", `Room: ${r} (in person)`, "Change time: [Your 면담 requests] → [Change]"],
-    repFallback: "the representative",
-    demo: "Demo mode: no Microsoft connection is set up, so the busy times below are made up and nothing gets sent. Fill in CONFIG (see SETUP.md) to go live.",
-    signinTitle: "Sign in to see open times",
-    signinBody: "Use your EverTri Microsoft 365 account. Only open and busy times are shown. Nobody's meeting details are visible here.",
-    signin: "Sign in with Microsoft", signout: "Sign out",
-    today: "First week", closed: "면담 booking for October has closed.", holiday: "Holiday", prev: "Previous week", next: "Next week", refresh: "Refresh",
-    lFree: "Open, click to book", lBusy: "Unavailable", lMine: "Your request",
-    loading: "Checking availability…",
-    loadErr: "Couldn't load availability.",
-    mailboxErr: m => `Couldn't read the calendar for ${m}. Its times are blocked until this is fixed.`,
-    mTitle: "Request a 면담", lDur: "Length", lSubject: "Topic", lDetails: "Anything she should know beforehand (optional)",
-    fTopic: "Topic", fReplaces: "Replaces", durNote: "1 h isn't available here: the next half-hour is already taken.",
-    mTitleChange: "Change time", mTitleRebook: "Request again", submitChange: "Move to this time",
-    change: "Change", rebook: "Request again", dismiss: "Dismiss",
-    moveBanner: w => `Pick a new time for your 면담 (${w}). The current booking stays until the new one is secured.`,
-    rebookBanner: w => `Pick another time to request again (was ${w}).`,
-    changed: "Moved: the new time is held and 안하영 has been invited. The old booking was cancelled.",
-    cancelled: "Cancelled", otherCancelledHint: "This request was cancelled. You can request another time.",
-    fWho: "From", fTo: "To", fRoom: "Room",
-    cancel: "Cancel", submit: "Request 면담", sending: "Sending…",
-    needSubject: "Please enter a topic.",
-    taken: "Sorry, someone booked this time just before you. Please pick another slot.",
-    sent: "Room A3 is held and 안하영 has been invited. It shows as Pending until she answers.",
-    sentSlow: "Request sent. Room A3 is still confirming, and 안하영 will be invited as soon as it does.",
-    stepRoom: "Holding Room A3…", stepInvite: "Inviting 안하영…",
-    checking: "Holding room…",
-    sentDemo: "Demo: request saved in this browser only, nothing sent.",
-    mine: "Your 면담 requests", none: "You have no upcoming requests.",
-    pending: "Pending", declined: "Declined", tentative: "Tentative",
-    confirmed: "Confirmed", roomTaken: "Time conflict",
-    roomTakenHint: "Someone else booked Room A3 for this time first, so it was cancelled. Request again at another time.",
-    bodyRoomNote: r => r,
-    bodyDeclineNote: "If you decline, please add a short reason (Decline → Edit the response before sending). The 면담 is then cancelled automatically and Room A3 is released.",
-    withdraw: "Cancel request",
-    cancelledHint: "안하영 declined, so this 면담 was cancelled. Her reply email has the reason. You can request another time.",
-    confirmWithdraw: "Cancel this request? A cancellation goes to 안하영 and to the room.",
-    withdrawn: "Request cancelled.",
-    mins: m => m >= 60 ? `${m/60} h`.replace(".5 h"," h 30 min") : `${m} min`,
-    dow: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
-    weekOf: d => `Week of ${d}`,
-    bodyIntro: "면담 request submitted via the booking page.",
-    bodyReq: "Requested by", bodyTopic: "Topic", bodyDetails: "Details", bodyWhen: "When", bodyRoom: "Room"
-  },
   ko: {
     eyebrow: n => `면담 예약 · 10월 · ${n}`,
     title: () => "면담 예약",
@@ -303,7 +250,7 @@ const I18N = {
     bodyReq: "요청자", bodyTopic: "주제", bodyDetails: "상세 내용", bodyWhen: "일시", bodyRoom: "회의실"
   }
 };
-let lang = (() => { try { return localStorage.getItem("rooma3.lang") || "ko"; } catch { return "ko"; } })();
+const lang = "ko";   // Korean only
 const T = (k, ...a) => { const v = I18N[lang][k]; return typeof v === "function" ? v(...a) : v; };
 
 /* ---------------- time helpers (all KST) ---------------- */
@@ -597,7 +544,6 @@ const repName = () => CONFIG.repName || (DEMO ? (lang === "ko" ? "대표님" : "
 
 function applyLang() {
   document.documentElement.lang = lang;
-  document.querySelectorAll(".lang button").forEach(b => b.classList.toggle("on", b.dataset.lang === lang));
   $("eyebrow").textContent = T("eyebrow", CONFIG.roomName);
   $("title").textContent = T("title", repName());
   $("subtitle").replaceChildren(...T("subtitle", CONFIG.roomName).map(x => el("li", {}, x)));
@@ -761,7 +707,6 @@ async function withdraw(tk) {
 let toastTimer;
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3800); }
 
-document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => { lang = b.dataset.lang; try { localStorage.setItem("rooma3.lang", lang); } catch {} applyLang(); }));
 
 /* ---------------- boot ---------------- */
 (async () => {

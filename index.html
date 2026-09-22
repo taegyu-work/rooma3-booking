@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>면담 예약</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js"></script>
+<style>
+:root{
+  --bg:#f1efe9; --surface:#fbfaf7; --surface-2:#f6f4ee; --line:#dcd8cd; --line-soft:#e8e5dc;
+  --ink:#1f1d19; --ink-2:#56524a; --ink-3:#8a857a;
+  --accent:#6a3f8f; --accent-ink:#fff; --accent-soft:#ece4f3; --accent-line:#c9b4dc;
+  --busy:#e7e3da; --busy-ink:#9b968b; --past:#eeebe4;
+  --ok:#2f7a4f; --ok-soft:#e1f0e6; --warn:#a4661a; --warn-soft:#f6ead7; --bad:#a83a32; --bad-soft:#f5e1de;
+  --shadow:0 1px 2px rgba(30,25,15,.06),0 6px 24px rgba(30,25,15,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#171614; --surface:#1f1e1b; --surface-2:#252420; --line:#393730; --line-soft:#2d2b27;
+    --ink:#ece9e2; --ink-2:#b5b0a5; --ink-3:#827d72;
+    --accent:#b48fd6; --accent-ink:#1a1320; --accent-soft:#2e2437; --accent-line:#5a4570;
+    --busy:#2a2925; --busy-ink:#6f6b62; --past:#211f1c;
+    --ok:#6fc190; --ok-soft:#1d3226; --warn:#e0a45a; --warn-soft:#382a18; --bad:#e2837a; --bad-soft:#3a201d;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#171614; --surface:#1f1e1b; --surface-2:#252420; --line:#393730; --line-soft:#2d2b27;
+  --ink:#ece9e2; --ink-2:#b5b0a5; --ink-3:#827d72;
+  --accent:#b48fd6; --accent-ink:#1a1320; --accent-soft:#2e2437; --accent-line:#5a4570;
+  --busy:#2a2925; --busy-ink:#6f6b62; --past:#211f1c;
+  --ok:#6fc190; --ok-soft:#1d3226; --warn:#e0a45a; --warn-soft:#382a18; --bad:#e2837a; --bad-soft:#3a201d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Public Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 16px 64px}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer}
+header.mast{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.eyebrow{font-family:"JetBrains Mono",monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:34px;line-height:1.1;margin:6px 0 6px;letter-spacing:-.01em}
+.sub{color:var(--ink-2);margin:0;max-width:60ch}
+.lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
+.lang button{border:0;background:transparent;color:var(--ink-2);padding:5px 11px;font-size:12.5px}
+.lang button.on{background:var(--ink);color:var(--bg)}
+.bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:14px}
+.who{display:flex;align-items:center;gap:10px;min-width:0}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.who .t{min-width:0}
+.who .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who .e{color:var(--ink-3);font-size:12.5px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:7px 13px;font-weight:500}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.small{padding:4px 10px;font-size:13px}
+.btn.danger{color:var(--bad);border-color:var(--bad-soft)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.demo{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:9px 12px;font-size:13.5px;margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.cal-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line-soft)}
+.cal-head h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:21px;margin:0}
+.nav{display:flex;gap:6px;align-items:center}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--ink-2);padding:10px 16px;border-bottom:1px solid var(--line-soft)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:6px;border:1px solid var(--line)}
+.legend .lf{background:var(--surface)}
+.legend .lb{background:var(--busy)}
+.legend .lm{background:var(--accent-soft);border-color:var(--accent-line)}
+.gridwrap{overflow-x:auto}
+.grid{display:grid;grid-template-columns:62px repeat(var(--days),minmax(112px,1fr));min-width:calc(62px + var(--days)*112px)}
+.grid .dh{position:sticky;top:0;background:var(--surface-2);border-bottom:1px solid var(--line);padding:9px 6px;text-align:center;font-size:12.5px;color:var(--ink-2)}
+.grid .dh b{display:block;font-size:17px;color:var(--ink);font-family:"JetBrains Mono",monospace;font-weight:500}
+.grid .dh.today b{color:var(--accent)}
+.grid .tm{font-size:11.5px;color:var(--ink-3);text-align:right;padding:0 8px;border-right:1px solid var(--line-soft);display:flex;align-items:center;justify-content:flex-end;height:34px}
+.slot{height:34px;border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft);padding:2px}
+.slot button{width:100%;height:100%;border:1px dashed transparent;border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-weight:600;opacity:.0;transition:opacity .12s}
+.slot.free button{opacity:1;color:transparent}
+.slot.free button:hover,.slot.free button:focus-visible{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);outline:none}
+.slot.busy{background:repeating-linear-gradient(135deg,var(--busy) 0 6px,transparent 6px 10px)}
+.slot.busy button,.slot.past button{cursor:default}
+.slot.past{background:var(--past)}
+.slot.mine{background:var(--accent-soft)}
+.slot.mine button{opacity:1;color:var(--accent);cursor:default;font-size:11px}
+.slot.off{background:var(--past)}
+.loading{padding:40px;text-align:center;color:var(--ink-3)}
+.section-title{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:21px;margin:30px 0 10px}
+.tickets{display:flex;flex-direction:column;gap:8px}
+.ticket{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+.ticket .tt{font-weight:600}
+.ticket .tw{color:var(--ink-2);font-size:13px}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.pending{background:var(--warn-soft);color:var(--warn)}
+.pill.accepted{background:var(--ok-soft);color:var(--ok)}
+.pill.declined{background:var(--bad-soft);color:var(--bad)}
+.pill.tentative{background:var(--accent-soft);color:var(--accent)}
+.empty{color:var(--ink-3);font-size:14px;padding:6px 2px}
+.signin{padding:44px 20px;text-align:center}
+.signin p{color:var(--ink-2);max-width:48ch;margin:8px auto 18px}
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(20,16,10,.42);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}
+.scrim.show{display:flex}
+.modal{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);width:100%;max-width:500px;max-height:calc(100vh - 32px);overflow:auto;padding:22px}
+.modal h3{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:22px;margin:0 0 4px}
+.modal .when{color:var(--ink-2);margin-bottom:16px}
+label.f{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin:12px 0 5px}
+input[type=text],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+textarea{min-height:110px;resize:vertical}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--accent-line);border-color:var(--accent)}
+div.f{font-size:13px;font-weight:600;color:var(--ink-2);margin:12px 0 5px}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:9px;padding:10px 0;font-weight:600}
+.seg button[aria-checked="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg button:disabled{opacity:.45;cursor:not-allowed;text-decoration:line-through}
+.seg-note{font-size:12.5px;color:var(--ink-3);margin-top:6px}
+.check{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14px;color:var(--ink-2)}
+.facts{background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--ink-2);margin-top:14px}
+.facts div{display:flex;gap:10px}
+.facts span:first-child{min-width:78px;color:var(--ink-3)}
+.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.err{color:var(--bad);font-size:13.5px;margin-top:10px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:30;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+@media (max-width:600px){ h1{font-size:28px} .grid{grid-template-columns:52px repeat(var(--days),minmax(92px,1fr));min-width:calc(52px + var(--days)*92px)} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <div class="eyebrow" id="eyebrow"></div>
+      <h1 id="title"></h1>
+      <p class="sub" id="subtitle"></p>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button data-lang="en">EN</button><button data-lang="ko">한국어</button>
+    </div>
+  </header>
+
+  <div id="demoNote" class="demo" hidden></div>
+  <div id="app"></div>
+</div>
+
+<div class="scrim" id="scrim">
+  <form class="modal" id="ticketForm" autocomplete="off">
+    <h3 id="mTitle"></h3>
+    <div class="when mono" id="mWhen"></div>
+    <div class="f" id="lDur"></div>
+    <div class="seg" id="durSeg" role="radiogroup" aria-labelledby="lDur"></div>
+    <div class="seg-note" id="durNote" hidden></div>
+    <input type="hidden" id="fDur" value="1">
+    <div class="facts" id="mFacts"></div>
+    <div class="err" id="mErr" hidden></div>
+    <div class="actions">
+      <button type="button" class="btn" id="mCancel"></button>
+      <button type="submit" class="btn primary" id="mSubmit"></button>
+    </div>
+  </form>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIG — fill these in (see SETUP.md). Leave clientId or
+   repEmail empty to run in DEMO mode with made-up busy times.
+   ============================================================ */
+const CONFIG = {
+  clientId:   "6912e10f-65b7-4a7f-9ea3-362c6d0d4292",  // Entra app "EverTri Room A3 Booking" (SPA)
+  tenantId:   "17c92b2f-19a7-4ae8-998a-d4e9365af3dd",  // EverTri tenant
+  repEmail:   "hyahn@evertri.com",                     // the representative whose time is being booked
+  repName:    "안하영",
+  roomEmail:  "rooma3@evertri.com",
+  roomName:   "Room A3",
+  dayStart:   "09:00",   // first slot (KST)
+  slotMinutes: 30,
+  slotCount:   18,       // 18 × 30 min = 09:00–18:00
+  maxSlotsPerTicket: 2,  // 30 min (default) or 1 h
+  topicSuffix: "면담",   // subject/topic is always "{requester name} 면담"
+  weekdays:   [1,2,3,4,5], // Mon–Fri
+  bookFrom:   "2026-10-01",  // booking window (KST, inclusive): 면담 runs for October only
+  bookTo:     "2026-10-31",
+  holidays:   ["2026-10-05", "2026-10-08", "2026-10-09", "2026-10-22"],  // 개천절 대체공휴일, (blocked), 한글날, (blocked)
+  minLeadMinutes: 60,    // can't book a slot starting sooner than this
+  roomWaitSeconds: 40,      // how long the page waits for Room A3 to accept before handing off to the worker
+  liveRefreshSeconds: 20,   // re-check free/busy this often while the page is open
+  subjectPrefix: "[면담]",   // must match SUBJECT_PREFIX in worker/wrangler.toml
+  workerUrl:  "https://rooma3-booking.evertri-hr.workers.dev"   // cancels declined / conflicted 면담 within ~1 min
+};
+/* ============================================================ */
+
+const GRAPH = "https://graph.microsoft.com/v1.0";
+const GRAPH_TZ = "Korea Standard Time";   // KST = fixed UTC+9, no DST
+const KST_MS = 9 * 3600e3;
+const SCOPES = ["User.Read", "Calendars.ReadWrite"];
+const DEMO = !CONFIG.clientId || !CONFIG.repEmail;
+/* Room A3 is invited up front (auto-accepts, slot held at once). If the representative
+   declines, the whole meeting is cancelled (room freed) by worker/ within ~1 min, or by
+   this page when the requester opens it. */
+const TAKEN_COMMENT = "Room A3가 이미 예약되어 있어 이 면담 신청은 자동으로 취소되었습니다. (Room A3 was already booked for this time; request cancelled automatically.)";
+const CHANGE_COMMENT = "신청자가 면담 일정을 변경하여 이 일정은 취소되었습니다. 새 일정 요청을 확인해 주세요. (Rescheduled by the requester; see the new request.)";
+const WITHDRAW_COMMENT = "신청자가 면담 신청을 철회했습니다. (Withdrawn by the requester.)";
+const DECLINE_COMMENT ="안하영님이 이 면담 요청을 거절하여 자동으로 취소되었습니다. Room A3 예약도 해제되었습니다. (This 면담 was declined and has been cancelled automatically; Room A3 has been released.)";
+
+/* ---------------- i18n ---------------- */
+const I18N = {
+  en: {
+    eyebrow: n => `면담 booking · October · ${n}`,
+    title: n => `Book a 면담 with ${n}`,
+    subtitle: r => `Pick an open slot in October and send a request. Every 면담 is held in person in ${r}. Room A3 is held as soon as you send. If she declines, the 면담 is cancelled automatically and the room is released.`,
+    repFallback: "the representative",
+    demo: "Demo mode: no Microsoft connection is set up, so the busy times below are made up and nothing gets sent. Fill in CONFIG (see SETUP.md) to go live.",
+    signinTitle: "Sign in to see open times",
+    signinBody: "Use your EverTri Microsoft 365 account. Only open and busy times are shown. Nobody's meeting details are visible here.",
+    signin: "Sign in with Microsoft", signout: "Sign out",
+    today: "First week", closed: "면담 booking for October has closed.", holiday: "Holiday", prev: "Previous week", next: "Next week", refresh: "Refresh",
+    lFree: "Open, click to book", lBusy: "Unavailable", lMine: "Your request",
+    loading: "Checking availability…",
+    loadErr: "Couldn't load availability.",
+    mailboxErr: m => `Couldn't read the calendar for ${m}. Its times are blocked until this is fixed.`,
+    mTitle: "Request a 면담", lDur: "Length", lSubject: "Topic", lDetails: "Anything she should know beforehand (optional)",
+    fTopic: "Topic", fReplaces: "Replaces", durNote: "1 h isn't available here: the next half-hour is already taken.",
+    mTitleChange: "Change time", mTitleRebook: "Request again", submitChange: "Move to this time",
+    change: "Change", rebook: "Request again", dismiss: "Dismiss",
+    moveBanner: w => `Pick a new time for your 면담 (${w}). The current booking stays until the new one is secured.`,
+    rebookBanner: w => `Pick another time to request again (was ${w}).`,
+    changed: "Moved: the new time is held and 안하영 has been invited. The old booking was cancelled.",
+    cancelled: "Cancelled", otherCancelledHint: "This request was cancelled. You can request another time.",
+    fWho: "From", fTo: "To", fRoom: "Room",
+    cancel: "Cancel", submit: "Request 면담", sending: "Sending…",
+    needSubject: "Please enter a topic.",
+    taken: "Sorry, someone booked this time just before you. Please pick another slot.",
+    sent: "Room A3 is held and 안하영 has been invited. It shows as Pending until she answers.",
+    sentSlow: "Request sent. Room A3 is still confirming, and 안하영 will be invited as soon as it does.",
+    stepRoom: "Holding Room A3…", stepInvite: "Inviting 안하영…",
+    checking: "Holding room…",
+    sentDemo: "Demo: request saved in this browser only, nothing sent.",
+    mine: "Your 면담 requests", none: "You have no upcoming requests.",
+    pending: "Pending", declined: "Declined", tentative: "Tentative",
+    confirmed: "Confirmed", roomTaken: "Time conflict",
+    roomTakenHint: "Someone else booked Room A3 for this time first, so it was cancelled. Request again at another time.",
+    bodyRoomNote: r => r,
+    bodyDeclineNote: "If you decline, please add a short reason (Decline → Edit the response before sending). The 면담 is then cancelled automatically and Room A3 is released.",
+    withdraw: "Withdraw",
+    cancelledHint: "안하영 declined, so this 면담 was cancelled. Her reply email has the reason. You can request another time.",
+    confirmWithdraw: "Withdraw this request? A cancellation goes to her and to the room.",
+    withdrawn: "Request withdrawn.",
+    mins: m => m >= 60 ? `${m/60} h`.replace(".5 h"," h 30 min") : `${m} min`,
+    dow: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+    weekOf: d => `Week of ${d}`,
+    bodyIntro: "면담 request submitted via the booking page.",
+    bodyReq: "Requested by", bodyTopic: "Topic", bodyDetails: "Details", bodyWhen: "When", bodyRoom: "Room"
+  },
+  ko: {
+    eyebrow: n => `면담 예약 · 10월 · ${n}`,
+    title: n => `${n}님 면담 예약`,
+    subtitle: r => `10월 중 빈 시간을 선택해 면담을 신청하세요. 모든 면담은 ${r}에서 대면으로 진행됩니다. 신청 즉시 회의실이 확보되며, 거절되면 면담이 자동으로 취소되고 회의실도 해제됩니다.`,
+    repFallback: "담당자",
+    demo: "데모 모드: Microsoft 연결이 아직 설정되지 않아 아래 바쁜 시간은 가상 데이터이며 초대도 발송되지 않습니다. 실제 사용하려면 CONFIG를 입력하세요(SETUP.md 참고).",
+    signinTitle: "로그인하고 빈 시간 확인",
+    signinBody: "EverTri Microsoft 365 계정으로 로그인하세요. 예약 가능 여부만 표시되며, 누구의 일정 내용도 여기에 나타나지 않습니다.",
+    signin: "Microsoft로 로그인", signout: "로그아웃",
+    today: "첫 주", closed: "10월 면담 예약이 마감되었습니다.", holiday: "공휴일", prev: "이전 주", next: "다음 주", refresh: "새로고침",
+    lFree: "예약 가능, 클릭하여 예약", lBusy: "예약 불가", lMine: "내 신청",
+    loading: "가능한 시간 확인 중…",
+    loadErr: "가능한 시간을 불러오지 못했습니다.",
+    mailboxErr: m => `${m}의 일정을 읽지 못했습니다. 해결될 때까지 해당 시간은 막혀 있습니다.`,
+    mTitle: "면담 신청", lDur: "시간", lSubject: "면담 주제", lDetails: "사전에 전달할 내용 (선택)",
+    fTopic: "면담 주제", fReplaces: "기존 일정", durNote: "바로 다음 30분이 이미 예약되어 있어 이 시간은 1시간 선택이 불가합니다.",
+    mTitleChange: "일정 변경", mTitleRebook: "다시 신청", submitChange: "이 시간으로 변경",
+    change: "변경", rebook: "다시 신청", dismiss: "닫기",
+    moveBanner: w => `변경할 새 시간을 선택하세요 (현재: ${w}). 새 시간이 확보되기 전까지 기존 예약은 유지됩니다.`,
+    rebookBanner: w => `다시 신청할 시간을 선택하세요 (이전: ${w}).`,
+    changed: "변경되었습니다. 새 시간이 확보되어 안하영님께 요청을 보냈고, 기존 예약은 취소되었습니다.",
+    cancelled: "취소됨", otherCancelledHint: "이 신청은 취소되었습니다. 다른 시간으로 다시 신청할 수 있습니다.",
+    fWho: "보내는 사람", fTo: "받는 사람", fRoom: "회의실",
+    cancel: "취소", submit: "면담 신청하기", sending: "보내는 중…",
+    needSubject: "주제를 입력하세요.",
+    taken: "죄송합니다. 바로 직전에 다른 분이 이 시간을 예약했습니다. 다른 시간을 선택해 주세요.",
+    sent: "Room A3를 확보하고 안하영님께 면담 요청을 보냈습니다. 응답 전까지 '대기'로 표시됩니다.",
+    sentSlow: "신청되었습니다. Room A3 확인이 끝나는 대로 안하영님께 요청이 자동 발송됩니다.",
+    stepRoom: "Room A3 확보 중…", stepInvite: "안하영님께 요청 보내는 중…",
+    checking: "회의실 확인 중",
+    sentDemo: "데모: 이 브라우저에만 저장되었고 발송되지 않았습니다.",
+    mine: "내 면담 신청", none: "신청한 면담이 없습니다.",
+    pending: "대기", declined: "거절됨", tentative: "미정",
+    confirmed: "확정", roomTaken: "일정 충돌",
+    roomTakenHint: "다른 분이 먼저 Room A3를 예약하여 취소되었습니다. 다른 시간으로 다시 신청해 주세요.",
+    bodyRoomNote: r => r,
+    bodyDeclineNote: "거절하실 경우 간단한 사유를 함께 보내주세요 (거절 → 보내기 전에 회신 편집). 거절하면 면담이 자동으로 취소되고 Room A3 예약도 해제됩니다.",
+    withdraw: "철회",
+    cancelledHint: "안하영님이 거절하여 면담이 자동 취소되었습니다. 사유는 회신 메일을 확인하시고, 다른 시간으로 다시 신청할 수 있습니다.",
+    confirmWithdraw: "이 면담 신청을 철회할까요? 담당자와 회의실에 취소 알림이 전송됩니다.",
+    withdrawn: "면담 신청을 철회했습니다.",
+    mins: m => m >= 60 ? (m % 60 ? `${Math.floor(m/60)}시간 ${m%60}분` : `${m/60}시간`) : `${m}분`,
+    dow: ["일","월","화","수","목","금","토"],
+    weekOf: d => `${d} 주`,
+    bodyIntro: "면담 예약 페이지를 통해 신청된 면담입니다.",
+    bodyReq: "요청자", bodyTopic: "주제", bodyDetails: "상세 내용", bodyWhen: "일시", bodyRoom: "회의실"
+  }
+};
+let lang = (() => { try { return localStorage.getItem("rooma3.lang") || "ko"; } catch { return "ko"; } })();
+const T = (k, ...a) => { const v = I18N[lang][k]; return typeof v === "function" ? v(...a) : v; };
+
+/* ---------------- time helpers (all KST) ---------------- */
+const pad = n => String(n).padStart(2, "0");
+const kst = d => { const x = new Date(d.getTime() + KST_MS); return { y:x.getUTCFullYear(), m:x.getUTCMonth()+1, d:x.getUTCDate(), h:x.getUTCHours(), mi:x.getUTCMinutes(), dow:x.getUTCDay() }; };
+const fromKst = (y, m, d, h = 0, mi = 0) => new Date(Date.UTC(y, m - 1, d, h - 9, mi));
+const addMin = (date, n) => new Date(date.getTime() + n * 60e3);
+const graphLocal = date => { const p = kst(date); return `${p.y}-${pad(p.m)}-${pad(p.d)}T${pad(p.h)}:${pad(p.mi)}:00`; };
+const parseGraph = dt => { const s = dt.dateTime.slice(0, 19); return new Date(s + (/^utc$/i.test(dt.timeZone) ? "Z" : "+09:00")); };
+const [DS_H, DS_M] = CONFIG.dayStart.split(":").map(Number);
+function mondayOf(date) { const p = kst(date); const back = (p.dow + 6) % 7; return fromKst(p.y, p.m, p.d - back); }
+const hm = date => { const p = kst(date); return `${pad(p.h)}:${pad(p.mi)}`; };
+const dayLabel = date => { const p = kst(date); return lang === "ko" ? `${p.m}월 ${p.d}일 (${T("dow")[p.dow]})` : `${T("dow")[p.dow]} ${p.m}/${p.d}`; };
+const whenLabel = (s, e) => `${dayLabel(s)} · ${hm(s)}–${hm(e)}`;
+const ymdParts = s => s.split("-").map(Number);
+const BOOK_FROM = fromKst(...ymdParts(CONFIG.bookFrom));
+const BOOK_END = addMin(fromKst(...ymdParts(CONFIG.bookTo)), 1440);   // exclusive
+const isHoliday = date => { const p = kst(date); return CONFIG.holidays.includes(`${p.y}-${pad(p.m)}-${pad(p.d)}`); };
+const firstWeek = () => mondayOf(new Date() > BOOK_FROM ? new Date() : BOOK_FROM);
+const lastWeek = () => mondayOf(addMin(BOOK_END, -1));
+
+/* ---------------- state ---------------- */
+const state = { account: null, week: null, days: [], busy: new Map(), mine: [], loading: false, error: null, warnings: [], sel: null };
+const slotKey = date => date.getTime();
+
+/* ---------------- MSAL / Graph ---------------- */
+let msalApp = null;
+async function initAuth() {
+  if (DEMO) { state.account = { name: "Demo User", username: "demo@evertri.com" }; return; }
+  msalApp = new msal.PublicClientApplication({
+    auth: { clientId: CONFIG.clientId, authority: `https://login.microsoftonline.com/${CONFIG.tenantId}`, redirectUri: location.origin + location.pathname.replace(/index.html$/, "") },
+    cache: { cacheLocation: "localStorage" }
+  });
+  await msalApp.initialize();
+  const res = await msalApp.handleRedirectPromise().catch(() => null);
+  state.account = res?.account || msalApp.getAllAccounts()[0] || null;
+}
+async function signIn() {
+  try { const r = await msalApp.loginPopup({ scopes: SCOPES, prompt: "select_account" }); state.account = r.account; }
+  catch (e) { if (/popup/i.test(e.errorCode || e.message)) return msalApp.loginRedirect({ scopes: SCOPES }); throw e; }
+  render(); loadWeek();
+}
+function signOut() { if (DEMO) return; msalApp.logoutPopup({ account: state.account }).catch(() => {}); state.account = null; render(); }
+async function token() {
+  try { return (await msalApp.acquireTokenSilent({ scopes: SCOPES, account: state.account })).accessToken; }
+  catch { return (await msalApp.acquireTokenPopup({ scopes: SCOPES, account: state.account })).accessToken; }
+}
+async function graph(method, path, body) {
+  const r = await fetch(GRAPH + path, {
+    method, headers: { Authorization: "Bearer " + await token(), "Content-Type": "application/json", Prefer: `outlook.timezone="${GRAPH_TZ}"` },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (r.status === 202 || r.status === 204) return null;
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error?.message || `Graph ${r.status}`);
+  return j;
+}
+
+/* Free/busy only. getSchedule's availabilityView is one digit per interval
+   (0 free · 1 tentative · 2 busy · 3 away · 4 working elsewhere) and carries no subjects. */
+async function fetchBusy(start, end) {
+  const busy = new Set(), warnings = [];
+  if (DEMO) { demoBusy(start, end, busy); return { busy, warnings }; }
+  const j = await graph("POST", "/me/calendar/getSchedule", {
+    schedules: [CONFIG.repEmail, CONFIG.roomEmail],
+    startTime: { dateTime: graphLocal(start), timeZone: GRAPH_TZ },
+    endTime:   { dateTime: graphLocal(end),   timeZone: GRAPH_TZ },
+    availabilityViewInterval: CONFIG.slotMinutes
+  });
+  for (const s of j.value || []) {
+    if (s.error || typeof s.availabilityView !== "string") {
+      warnings.push(T("mailboxErr", s.scheduleId));
+      for (let t = start; t < end; t = addMin(t, CONFIG.slotMinutes)) busy.add(slotKey(t));
+      continue;
+    }
+    [...s.availabilityView].forEach((c, i) => { if (c === "1" || c === "2" || c === "3") busy.add(slotKey(addMin(start, i * CONFIG.slotMinutes))); });
+    // Belt and braces: also block from item start/end (only times are read, never subjects).
+    for (const it of s.scheduleItems || []) {
+      if (it.status === "free" || it.status === "workingElsewhere") continue;
+      const a = parseGraph(it.start), b = parseGraph(it.end);
+      for (let t = start; t < end; t = addMin(t, CONFIG.slotMinutes)) if (t < b && addMin(t, CONFIG.slotMinutes) > a) busy.add(slotKey(t));
+    }
+  }
+  return { busy, warnings };
+}
+
+const findAtt = (e, who) => (e.attendees || []).find(a => a.emailAddress?.address?.toLowerCase() === who.toLowerCase());
+const repAttendee = () => ({ emailAddress: { address: CONFIG.repEmail, name: CONFIG.repName || CONFIG.repEmail }, type: "required" });
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* The signed-in person's own tickets (from their own calendar). Also a backup for the
+   worker: finishes any step that got interrupted (page closed mid-send, worker down). */
+async function fetchMine() {
+  if (DEMO) return demoLoad();
+  const out = await fetchMineLive();
+  // Requests this browser sent that are no longer on the calendar = auto-cancelled (declined /
+  // lost the room) -> keep showing them so the requester can 다시 신청 at another time.
+  const open = new Set(out.map(t => t.id));
+  const gone = histLoad().filter(h => !open.has(h.id));
+  const ask = gone.filter(h => !h.status).map(h => h.id);
+  let ws = {};
+  if (ask.length && CONFIG.workerUrl) {
+    try { ws = await (await fetch(`${CONFIG.workerUrl.replace(/\/$/, "")}/status?ids=${encodeURIComponent(ask.join(","))}`)).json(); } catch {}
+  }
+  for (const h of gone) {
+    if (h.end < Date.now()) { histDrop(h.id); continue; }
+    const status = h.status || (ws[h.id] === "declined" || ws[h.id] === "taken" ? ws[h.id] : "cancelled");
+    if (!h.status) histMark(h.id, status);
+    out.push({ id: h.id, subject: h.subject, start: new Date(h.start), end: new Date(h.end), closed: status });
+  }
+  return out.sort((a, b) => a.start - b.start);
+}
+async function fetchMineLive() {
+  const now = new Date(), until = BOOK_END > now ? BOOK_END : addMin(now, 1440);
+  const q = `/me/calendarView?startDateTime=${encodeURIComponent(now.toISOString())}&endDateTime=${encodeURIComponent(until.toISOString())}&$select=id,subject,start,end,attendees,isCancelled,isOrganizer,createdDateTime&$orderby=start/dateTime&$top=200`;
+  const j = await graph("GET", q);
+  const out = [];
+  for (const e of j.value || []) {
+    if (!e.isOrganizer || e.isCancelled || !(e.subject || "").startsWith(CONFIG.subjectPrefix)) continue;
+    const r = findAtt(e, CONFIG.repEmail), rm = findAtt(e, CONFIG.roomEmail);
+    if (!r && !rm) continue;
+    const t = { id: e.id, subject: e.subject.slice(CONFIG.subjectPrefix.length).trim(), start: parseGraph(e.start), end: parseGraph(e.end),
+                invited: !!r, response: r ? (r.status?.response || "none") : "none", room: rm ? (rm.status?.response || "none") : null };
+    try {
+      if (t.room === "declined" || t.response === "declined") {
+        // Room was already taken, or she declined -> cancel the whole meeting (frees Room A3).
+        await graph("POST", `/me/events/${encodeURIComponent(e.id)}/cancel`, { comment: t.room === "declined" ? TAKEN_COMMENT : DECLINE_COMMENT });
+        t.closed = t.room === "declined" ? "taken" : "declined";
+        histAdd({ id: t.id, subject: t.subject, start: t.start.getTime(), end: t.end.getTime(), status: t.closed });
+      } else if (!t.invited && t.room === "accepted" && Date.now() - new Date(e.createdDateTime) > 90e3) {
+        await graph("PATCH", `/me/events/${encodeURIComponent(e.id)}`, { attendees: [...e.attendees.map(a => ({ emailAddress: a.emailAddress, type: a.type })), repAttendee()] });
+        t.invited = true;
+      }
+    } catch (err) { console.warn("ticket follow-up", err); }
+    out.push(t);
+  }
+  return out;
+}
+/* This browser's record of what the signed-in person sent (id + time), so requests that get
+   auto-cancelled don't just vanish from "내 면담 신청". */
+const histKey = () => `rooma3.hist.${state.account?.username || ""}`;
+function histLoad() { try { return JSON.parse(localStorage.getItem(histKey()) || "[]"); } catch { return []; } }
+function histSave(l) { try { localStorage.setItem(histKey(), JSON.stringify(l)); } catch {} }
+function histAdd(e) { histSave([...histLoad().filter(x => x.id !== e.id), e]); }
+function histDrop(id) { histSave(histLoad().filter(x => x.id !== id)); }
+function histMark(id, status) { histSave(histLoad().map(x => x.id === id ? { ...x, status } : x)); }
+
+function ticketState(t) {
+  if (t.closed) return t.closed === "taken" ? "roomTaken" : t.closed === "declined" ? "declined" : "cancelled";
+  if (t.room === "declined") return "roomTaken";
+  if (t.response === "declined") return "declined";
+  if (!t.invited) return "checking";
+  if (t.response === "accepted") return "confirmed";
+  if (t.response === "tentativelyAccepted") return "tentative";
+  return "pending";
+}
+
+/* Booking is a two-step handshake so two people can never both get the same slot:
+   1. create the meeting with ONLY Room A3 invited. The room's auto-accept is the lock:
+      Exchange processes a room's requests one at a time, so of two near-simultaneous
+      requests the room accepts the first and declines the second.
+   2. wait for the room's answer (usually a few seconds):
+        accepted -> invite 안하영 (she only ever sees requests that hold the room)
+        declined -> cancel it and tell the requester the time was just taken.
+   If the room is slow, the worker (and this page on the next visit) finishes step 2. */
+async function createTicket({ start, end, subject }, progress = () => {}) {
+  // Quick pre-check against the latest free/busy.
+  const { busy } = await fetchBusy(start, end);
+  if (busy.size) throw Object.assign(new Error(T("taken")), { taken: true });
+  if (DEMO) return demoCreate({ start, end, subject }, progress);
+
+  const who = state.account.name || state.account.username;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+  const row = (k, v) => `<tr><td style="padding:4px 14px 4px 0;color:#777;vertical-align:top;white-space:nowrap">${k}</td><td style="padding:4px 0">${v}</td></tr>`;
+  const html = `<p>${esc(T("bodyIntro"))}</p><table style="border-collapse:collapse;font-family:Segoe UI,sans-serif;font-size:14px">` +
+    row(T("bodyReq"), `${esc(who)} &lt;${esc(state.account.username)}&gt;`) +
+    row(T("bodyTopic"), esc(subject)) +
+    row(T("bodyWhen"), esc(whenLabel(start, end)) + " KST") +
+    row(T("bodyRoom"), esc(CONFIG.roomName)) +
+    `</table>` +
+    `<p style="color:#777;font-size:13px">${esc(T("bodyDeclineNote"))}</p>`;
+  const ev = {
+    subject: `${CONFIG.subjectPrefix} ${subject}`,   // e.g. "[면담] 홍길동 면담"
+    sensitivity: "private",   // others who can see her calendar get "Private appointment", not the topic
+    isOnlineMeeting: false,   // in-person only, no Teams link
+    body: { contentType: "HTML", content: html },
+    start: { dateTime: graphLocal(start), timeZone: GRAPH_TZ },
+    end:   { dateTime: graphLocal(end),   timeZone: GRAPH_TZ },
+    location: { displayName: CONFIG.roomName, locationEmailAddress: CONFIG.roomEmail, locationType: "conferenceRoom" },
+    attendees: [{ emailAddress: { address: CONFIG.roomEmail, name: CONFIG.roomName }, type: "resource" }],   // step 1: room only
+    responseRequested: true,
+    allowNewTimeProposals: false,
+    showAs: "busy",
+    transactionId: `rooma3-${state.account.username}-${start.getTime()}-${Math.floor(Date.now() / 60e3)}`   // stops accidental double-sends
+  };
+  progress(T("stepRoom"));
+  const created = await graph("POST", "/me/events", ev);
+  const path = `/me/events/${encodeURIComponent(created.id)}`;
+  if (CONFIG.workerUrl) {   // let the worker watch it (finishes step 2 if this tab closes; cancels on her decline)
+    fetch(CONFIG.workerUrl.replace(/\/$/, "") + "/register", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ organizer: state.account.username, id: created.id }) }).catch(err => console.warn("worker register", err));
+  }
+
+  // Step 2: wait for Room A3's answer.
+  for (let i = 0; i < CONFIG.roomWaitSeconds / 2; i++) {
+    await sleep(2000);
+    const cur = await graph("GET", `${path}?$select=attendees`);
+    const room = findAtt(cur, CONFIG.roomEmail)?.status?.response;
+    if (room === "declined") {
+      await graph("POST", `${path}/cancel`, { comment: TAKEN_COMMENT }).catch(() => {});
+      throw Object.assign(new Error(T("taken")), { taken: true });
+    }
+    if (room === "accepted") {
+      progress(T("stepInvite"));
+      if (!findAtt(cur, CONFIG.repEmail))
+        await graph("PATCH", path, { attendees: [...cur.attendees.map(a => ({ emailAddress: a.emailAddress, type: a.type })), repAttendee()] });
+      return { status: "sent", id: created.id };
+    }
+  }
+  return { status: "slow", id: created.id };   // room hasn't answered yet; the worker / next visit will finish
+}
+
+async function withdrawTicket(id, comment = WITHDRAW_COMMENT) {
+  if (DEMO) { demoSave(demoLoad().filter(t => t.id !== id)); return; }
+  await graph("POST", `/me/events/${encodeURIComponent(id)}/cancel`, { comment });
+}
+
+/* ---------------- demo data ---------------- */
+function demoBusy(start, end, busy) {
+  for (let t = start; t < end; t = addMin(t, CONFIG.slotMinutes)) {
+    const n = Math.floor(t.getTime() / 6e5);
+    const h = Math.abs(Math.sin(n * 12.9898) * 43758.5453) % 1;   // stable pseudo-random per slot
+    if (h < 0.34) busy.add(slotKey(t));
+  }
+  for (const m of demoLoad()) for (let t = m.start; t < m.end; t = addMin(t, CONFIG.slotMinutes)) busy.add(slotKey(t));
+}
+// Demo: simulate the room handshake. Set window.DEMO_ROOM_DECLINE = true in the console to
+// see what the second of two near-simultaneous requesters gets.
+async function demoCreate({ start, end, subject }, progress) {
+  progress(T("stepRoom")); await sleep(1200);
+  if (window.DEMO_ROOM_DECLINE) throw Object.assign(new Error(T("taken")), { taken: true });
+  progress(T("stepInvite")); await sleep(500);
+  const id = "d" + Date.now(), list = demoLoad(); list.push({ id, subject, start, end, invited: true, response: "none", room: "accepted" }); demoSave(list);
+  return { status: "sent", id };
+}
+function demoLoad() { try { return JSON.parse(localStorage.getItem("rooma3.demo") || "[]").map(x => ({ invited: true, ...x, start: new Date(x.start), end: new Date(x.end) })); } catch { return []; } }
+function demoSave(l) { try { localStorage.setItem("rooma3.demo", JSON.stringify(l)); } catch {} }
+
+/* ---------------- load ---------------- */
+function weekDays() {
+  const out = [];
+  for (let i = 0; i < 7; i++) {
+    const d = addMin(state.week, i * 1440);
+    if (CONFIG.weekdays.includes(kst(d).dow)) out.push(d);
+  }
+  return out;
+}
+let loadSeq = 0;
+async function loadWeek(silent = false) {
+  if (!state.account) return;
+  const seq = ++loadSeq, week = state.week;
+  if (!silent) { state.days = weekDays(); state.loading = true; state.error = null; state.warnings = []; render(); }
+  try {
+    const end = addMin(week, 7 * 1440);
+    const [{ busy, warnings }, mine] = await Promise.all([fetchBusy(week, end), fetchMine()]);
+    if (seq !== loadSeq) return;   // a newer load (week change) superseded this one
+    state.busy = busy; state.warnings = warnings; state.mine = mine; state.error = null;
+  } catch (e) { if (seq !== loadSeq) return; if (!silent) state.error = e.message; }
+  state.loading = false;
+  if (silent && state.sel) return;   // don't redraw under an open form; the send re-checks anyway
+  render();
+}
+/* Live: quietly re-check free/busy every few seconds while the tab is visible, and right
+   away when someone comes back to the tab, so slots others just took turn grey. */
+setInterval(() => { if (document.visibilityState === "visible" && !state.loading && !state.sending) loadWeek(true); }, CONFIG.liveRefreshSeconds * 1000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !state.loading && !state.sending) loadWeek(true); });
+function slotStatus(t) {
+  const end = addMin(t, CONFIG.slotMinutes);
+  const mine = state.mine.find(m => t < m.end && end > m.start && !m.closed && m.response !== "declined" && m.room !== "declined");
+  if (mine) return { cls: "mine", ticket: mine };
+  if (t < addMin(new Date(), CONFIG.minLeadMinutes)) return { cls: "past" };
+  if (t < BOOK_FROM || t >= BOOK_END || isHoliday(t)) return { cls: "off" };
+  if (state.busy.has(slotKey(t))) return { cls: "busy" };
+  return { cls: "free" };
+}
+
+/* ---------------- render ---------------- */
+const $ = id => document.getElementById(id);
+const el = (tag, attrs = {}, ...kids) => { const n = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === "class") n.className = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else if (v != null) n.setAttribute(k, v); } for (const c of kids.flat()) if (c != null) n.append(c); return n; };
+const repName = () => CONFIG.repName || (DEMO ? (lang === "ko" ? "대표님" : "the CEO") : T("repFallback"));
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll(".lang button").forEach(b => b.classList.toggle("on", b.dataset.lang === lang));
+  $("eyebrow").textContent = T("eyebrow", CONFIG.roomName);
+  $("title").textContent = T("title", repName());
+  $("subtitle").textContent = T("subtitle", CONFIG.roomName);
+  $("demoNote").hidden = !DEMO; $("demoNote").textContent = T("demo");
+  $("mTitle").textContent = T("mTitle"); $("lDur").textContent = T("lDur");
+  $("mCancel").textContent = T("cancel"); $("mSubmit").textContent = T("submit");
+  render();
+}
+
+function render() {
+  const app = $("app"); app.replaceChildren();
+  if (!state.account) {
+    app.append(el("div", { class: "card signin" },
+      el("h2", { class: "section-title", style: "margin-top:0" }, T("signinTitle")),
+      el("p", {}, T("signinBody")),
+      el("button", { class: "btn primary", onclick: () => signIn().catch(e => toast(e.message)) }, T("signin"))));
+    return;
+  }
+  const a = state.account, initial = (a.name || a.username || "?").trim()[0].toUpperCase();
+  app.append(el("div", { class: "bar" },
+    el("div", { class: "who" }, el("div", { class: "avatar" }, initial),
+      el("div", { class: "t" }, el("div", { class: "n" }, a.name || a.username), el("div", { class: "e" }, a.username))),
+    DEMO ? null : el("button", { class: "btn small", onclick: signOut }, T("signout"))));
+
+  // calendar
+  const thisMon = firstWeek(), lastMon = lastWeek();
+  if (new Date() >= BOOK_END) { app.append(el("div", { class: "card signin" }, el("p", {}, T("closed")))); }
+  const card = el("div", { class: "card" });
+  const p = kst(state.week);
+  card.append(el("div", { class: "cal-head" },
+    el("h2", {}, T("weekOf", lang === "ko" ? `${p.y}년 ${p.m}월 ${p.d}일` : `${p.y}-${pad(p.m)}-${pad(p.d)}`)),
+    el("div", { class: "nav" },
+      el("button", { class: "btn small", "aria-label": T("prev"), disabled: state.week <= thisMon ? "" : null, onclick: () => shiftWeek(-1) }, "‹"),
+      el("button", { class: "btn small", onclick: () => { state.week = thisMon; loadWeek(); } }, T("today")),
+      el("button", { class: "btn small", "aria-label": T("next"), disabled: state.week >= lastMon ? "" : null, onclick: () => shiftWeek(1) }, "›"),
+      el("button", { class: "btn small", onclick: loadWeek }, "↻ " + T("refresh")))));
+  card.append(el("div", { class: "legend" },
+    el("span", {}, el("i", { class: "lf" }), T("lFree")), el("span", {}, el("i", { class: "lb" }), T("lBusy")), el("span", {}, el("i", { class: "lm" }), T("lMine"))));
+  for (const w of state.warnings) card.append(el("div", { class: "demo", style: "margin:10px 16px 0" }, w));
+  if (state.move) card.append(el("div", { class: "demo", style: "margin:10px 16px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--accent-soft);color:var(--accent)" },
+    el("span", {}, T(state.move.kind === "change" ? "moveBanner" : "rebookBanner", whenLabel(state.move.from.start, state.move.from.end))),
+    el("button", { class: "btn small", onclick: () => { state.move = null; render(); } }, T("cancel"))));
+
+  if (state.loading) card.append(el("div", { class: "loading" }, T("loading")));
+  else if (state.error) card.append(el("div", { class: "loading err" }, `${T("loadErr")} ${state.error}`));
+  else {
+    const days = state.days, todayKey = kst(new Date());
+    const grid = el("div", { class: "grid", style: `--days:${days.length}` });
+    grid.append(el("div", { class: "dh" }));
+    for (const d of days) { const q = kst(d); grid.append(el("div", { class: "dh" + (q.y === todayKey.y && q.m === todayKey.m && q.d === todayKey.d ? " today" : "") }, T("dow")[q.dow], el("b", {}, `${q.m}/${q.d}`))); }
+    for (let i = 0; i < CONFIG.slotCount; i++) {
+      const mins = DS_H * 60 + DS_M + i * CONFIG.slotMinutes;
+      grid.append(el("div", { class: "tm mono" }, `${pad(Math.floor(mins / 60))}:${pad(mins % 60)}`));
+      for (const d of days) {
+        const q = kst(d), t = fromKst(q.y, q.m, q.d, 0, mins), st = slotStatus(t);
+        const label = st.cls === "free" ? `${hm(t)} +` : st.cls === "mine" && t.getTime() === st.ticket.start.getTime() ? st.ticket.subject : "";
+        grid.append(el("div", { class: "slot " + st.cls },
+          el("button", { type: "button", tabindex: st.cls === "free" ? "0" : "-1", "aria-label": `${dayLabel(t)} ${hm(t)} ${st.cls === "free" ? T("lFree") : st.cls === "mine" ? T("lMine") : T("lBusy")}`, title: st.cls === "mine" ? st.ticket.subject : "", onclick: st.cls === "free" ? () => openTicket(t) : null }, label)));
+      }
+    }
+    card.append(el("div", { class: "gridwrap" }, grid));
+  }
+  app.append(card);
+
+  // my tickets
+  app.append(el("h2", { class: "section-title" }, T("mine")));
+  const list = el("div", { class: "tickets" });
+  if (!state.mine.length) list.append(el("div", { class: "empty" }, T("none")));
+  const PILL = { checking: "tentative", pending: "pending", tentative: "tentative", confirmed: "accepted", roomTaken: "declined", declined: "declined", cancelled: "declined" };
+  for (const tk of state.mine) {
+    const key = ticketState(tk), closed = !!tk.closed || key === "declined" || key === "roomTaken";
+    const hint = { declined: T("cancelledHint"), roomTaken: T("roomTakenHint"), cancelled: T("otherCancelledHint") }[key];
+    const moving = state.move?.from.id === tk.id;
+    list.append(el("div", { class: "ticket", style: moving ? "border-color:var(--accent)" : null },
+      el("div", {}, el("div", { class: "tt" }, tk.subject), el("div", { class: "tw mono" }, whenLabel(tk.start, tk.end)),
+        hint ? el("div", { class: "tw", style: "color:var(--bad)" }, hint) : null),
+      el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" },
+        el("span", { class: "pill " + PILL[key] }, T(key)),
+        closed
+          ? [el("button", { class: "btn small primary", onclick: () => startMove(tk, "rebook") }, T("rebook")),
+             el("button", { class: "btn small", onclick: () => { histDrop(tk.id); state.mine = state.mine.filter(x => x.id !== tk.id); render(); } }, T("dismiss"))]
+          : [el("button", { class: "btn small", onclick: () => startMove(tk, "change") }, T("change")),
+             el("button", { class: "btn small danger", onclick: () => withdraw(tk) }, T("withdraw"))])));
+  }
+  app.append(list);
+}
+/* 변경 (active request) / 다시 신청 (auto-cancelled request): pick a new slot on the calendar. */
+function startMove(tk, kind) {
+  state.move = { from: tk, kind };
+  const wk = mondayOf(tk.start);
+  if (wk.getTime() !== state.week.getTime() && wk >= firstWeek() && wk <= lastWeek()) { state.week = wk; loadWeek(); } else render();
+  document.querySelector(".card:not(.signin)")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function shiftWeek(n) { state.week = addMin(state.week, n * 7 * 1440); loadWeek(); }
+
+/* ---------------- ticket modal ---------------- */
+function openTicket(t) {
+  // longest run of consecutive open slots from t, capped (so 1 h is only offered if both halves are free)
+  let n = 0;
+  const q = kst(t), dayEnd = fromKst(q.y, q.m, q.d, 0, DS_H * 60 + DS_M + CONFIG.slotCount * CONFIG.slotMinutes);
+  for (let s = t; n < CONFIG.maxSlotsPerTicket && s < dayEnd && slotStatus(s).cls === "free"; s = addMin(s, CONFIG.slotMinutes)) n++;
+  state.sel = { start: t };
+  // Both lengths always visible; 1 h is greyed out (with the reason) when the next half-hour isn't free.
+  $("fDur").value = "1";   // default 30 min
+  const seg = $("durSeg"); seg.replaceChildren();
+  for (let k = 1; k <= CONFIG.maxSlotsPerTicket; k++) {
+    seg.append(el("button", { type: "button", role: "radio", "aria-checked": k === 1 ? "true" : "false", disabled: k > n ? "" : null,
+      onclick: () => { $("fDur").value = String(k); seg.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-checked", String(i + 1 === k))); updateWhen(); } },
+      T("mins", k * CONFIG.slotMinutes)));
+  }
+  $("durNote").hidden = n >= CONFIG.maxSlotsPerTicket; $("durNote").textContent = T("durNote");
+  $("mTitle").textContent = state.move ? T(state.move.kind === "change" ? "mTitleChange" : "mTitleRebook") : T("mTitle");
+  $("mErr").hidden = true; $("mSubmit").disabled = false; $("mSubmit").textContent = T(state.move?.kind === "change" ? "submitChange" : "submit");
+  updateWhen();
+  $("scrim").classList.add("show");
+  setTimeout(() => $("durSeg").querySelector("button")?.focus(), 30);
+}
+const myTopic = () => `${state.account.name || state.account.username} ${CONFIG.topicSuffix}`;
+function selEnd() { return addMin(state.sel.start, Number($("fDur").value) * CONFIG.slotMinutes); }
+function updateWhen() {
+  $("mWhen").textContent = whenLabel(state.sel.start, selEnd()) + " KST";
+  const a = state.account;
+  $("mFacts").replaceChildren(...[
+    el("div", {}, el("span", {}, T("fTopic")), el("span", { style: "color:var(--ink);font-weight:600" }, myTopic())),
+    state.move?.kind === "change" ? el("div", {}, el("span", {}, T("fReplaces")), el("span", {}, whenLabel(state.move.from.start, state.move.from.end))) : null,
+    el("div", {}, el("span", {}, T("fWho")), el("span", {}, `${a.name || ""} <${a.username}>`)),
+    el("div", {}, el("span", {}, T("fTo")), el("span", {}, `${repName()}${CONFIG.repEmail ? ` <${CONFIG.repEmail}>` : ""}`)),
+    el("div", {}, el("span", {}, T("fRoom")), el("span", {}, `${CONFIG.roomName} <${CONFIG.roomEmail}>`))].filter(Boolean));
+}
+function closeModal() { $("scrim").classList.remove("show"); state.sel = null; }
+$("mCancel").addEventListener("click", closeModal);
+$("scrim").addEventListener("click", e => { if (e.target === $("scrim")) closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && state.sel) closeModal(); });
+$("ticketForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("mSubmit").disabled = true; $("mSubmit").textContent = T("sending"); $("mErr").hidden = true; $("mCancel").disabled = true;
+  state.sending = true;
+  try {
+    const start = state.sel.start, end = selEnd(), subject = myTopic(), move = state.move;
+    const res = await createTicket({ start, end, subject }, msg => { $("mSubmit").textContent = msg; });
+    histAdd({ id: res.id, subject, start: start.getTime(), end: end.getTime() });
+    // 변경: the new time is secured, only now let go of the old one. 다시 신청: forget the old entry.
+    if (move?.kind === "change") await withdrawTicket(move.from.id, CHANGE_COMMENT).catch(err => console.warn("cancel old", err));
+    if (move) histDrop(move.from.id);
+    state.move = null;
+    closeModal();
+    toast(DEMO ? T("sentDemo") : move?.kind === "change" ? T("changed") : res.status === "slow" ? T("sentSlow") : T("sent"));
+  } catch (err) {
+    $("mErr").textContent = err.message; $("mErr").hidden = false;
+    $("mSubmit").textContent = T("submit");
+    $("mSubmit").disabled = !!err.taken;   // that slot is gone: pick another one
+  } finally {
+    state.sending = false; $("mCancel").disabled = false;
+    loadWeek();
+  }
+});
+async function withdraw(tk) {
+  if (!confirm(T("confirmWithdraw"))) return;
+  try { await withdrawTicket(tk.id); histDrop(tk.id); toast(T("withdrawn")); loadWeek(); } catch (e) { toast(e.message); }
+}
+let toastTimer;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3800); }
+
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => { lang = b.dataset.lang; try { localStorage.setItem("rooma3.lang", lang); } catch {} applyLang(); }));
+
+/* ---------------- boot ---------------- */
+(async () => {
+  state.week = firstWeek();
+  applyLang();
+  try { await initAuth(); } catch (e) { toast(e.message); }
+  render();
+  loadWeek();
+})();
+</script>
+</body>
+</html>
